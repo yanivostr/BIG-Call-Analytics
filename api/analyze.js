@@ -8,11 +8,36 @@ export default async function handler(req, res) {
     const { transcript } = req.body;
     if (!transcript) return res.status(400).json({ error: "Missing transcript" });
 
-    const prompt = `אתה מומחה לניתוח שיחות מכירה בעברית. נתח את השיחה הזו והחזר JSON בלבד:
+    // Prompt חזק שמכריח את המודל להחזיר JSON מלא
+    const prompt = `אתה מומחה לניתוח שיחות מכירה בעברית.
+נתח את השיחה הזו והחזר JSON **מלא** בלבד (ללא Markdown, ללא backticks), בדיוק במבנה הזה:
+
+{
+  "overall_score": <מספר 0-100>,
+  "score_label": <"מכירה מצוינת" / "מכירה טובה" / "מכירה בינונית" / "מכירה חלשה">,
+  "verdict": "<משפט אחד קצר>",
+  "sub_scores": {
+    "opening": <0-10>,
+    "needs_finding": <0-10>,
+    "solution_presentation": <0-10>,
+    "closing": <0-10>
+  },
+  "pros": [<3-5 נקודות חיוביות, כל אחת משפט קצר>],
+  "cons": [<3-5 נקודות לשיפור, כל אחת משפט קצר>],
+  "key_moments": [
+    {"type": "positive" או "negative", "label": "<שם הרגע>", "description": "<תיאור קצר>"}
+  ],
+  "tips": [
+    {"title": "<כותרת>", "body": "<הסבר לשיפור>"}
+  ]
+}
+
+שיחת המכירה:
 """
 ${transcript}
 """`;
 
+    // שולח ל-Claude
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -33,9 +58,7 @@ ${transcript}
     const text = data?.content?.map((b) => b.text || "").join("") || "";
     const clean = text.replace(/```json|```/g, "").trim();
 
-    if (!clean) {
-      return res.status(500).json({ error: "Claude returned empty response" });
-    }
+    if (!clean) return res.status(500).json({ error: "Claude returned empty response" });
 
     let parsed;
     try {
@@ -45,11 +68,19 @@ ${transcript}
       return res.status(500).json({ error: "Failed to parse Claude response as JSON" });
     }
 
-    // בדיקה אם sub_scores קיים
-    if (!parsed.sub_scores) {
-      console.error("❌ sub_scores missing in parsed JSON:", parsed);
-      return res.status(500).json({ error: "sub_scores missing in Claude response" });
-    }
+    // Fallback כדי למנוע קריסה אם sub_scores חסר
+    parsed.sub_scores = parsed.sub_scores || {
+      opening: 0,
+      needs_finding: 0,
+      solution_presentation: 0,
+      closing: 0,
+    };
+
+    // Fallback נוסף לדברים נוספים אם רוצים
+    parsed.pros = parsed.pros || [];
+    parsed.cons = parsed.cons || [];
+    parsed.key_moments = parsed.key_moments || [];
+    parsed.tips = parsed.tips || [];
 
     res.status(200).json(parsed);
 
