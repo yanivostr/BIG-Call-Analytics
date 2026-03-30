@@ -27,19 +27,34 @@ ${transcript}
       }),
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err?.error?.message || "Claude API error" });
+    const data = await response.json();
+    console.log("📝 Claude raw response:", data);
+
+    const text = data?.content?.map((b) => b.text || "").join("") || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+
+    if (!clean) {
+      return res.status(500).json({ error: "Claude returned empty response" });
     }
 
-    const data = await response.json();
-    const text = data.content.map((b) => b.text || "").join("");
-    const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch (err) {
+      console.error("❌ JSON parse error:", err, "Text:", clean);
+      return res.status(500).json({ error: "Failed to parse Claude response as JSON" });
+    }
+
+    // בדיקה אם sub_scores קיים
+    if (!parsed.sub_scores) {
+      console.error("❌ sub_scores missing in parsed JSON:", parsed);
+      return res.status(500).json({ error: "sub_scores missing in Claude response" });
+    }
 
     res.status(200).json(parsed);
 
   } catch (err) {
+    console.error("❌ Handler error:", err);
     res.status(500).json({ error: err.message });
   }
 }
