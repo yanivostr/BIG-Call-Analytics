@@ -15,6 +15,7 @@ export default async function handler(req, res) {
         'Content-Type': contentType,
       },
       body: req,
+      duplex: 'half',
     });
 
     const text = await response.text();
