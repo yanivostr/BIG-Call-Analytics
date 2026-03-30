@@ -3,15 +3,24 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'OpenAI API key not configured' });
   try {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const buffer = Buffer.concat(chunks);
     const contentType = req.headers['content-type'] || '';
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': contentType },
-      body: req,
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': contentType
+      },
+      body: buffer
     });
     const text = await response.text();
     if (!response.ok) return res.status(response.status).json({ error: text });
     res.status(200).send(text);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
+
 export const config = { api: { bodyParser: false } };
