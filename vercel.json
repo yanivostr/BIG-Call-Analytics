@@ -2,6 +2,6 @@
   "rewrites": [
     { "source": "/api/transcribe", "destination": "/api/transcribe.js" },
     { "source": "/api/analyze", "destination": "/api/analyze.js" },
-    { "source": "/(.*)", "destination": "/public/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
