@@ -235,7 +235,7 @@ footer{border-top:1px solid var(--b);padding:20px 0;text-align:center;color:var(
 
 <!-- LOGIN -->
 <div id="pgL" class="pc"><div class="w"><div class="lw">
-  <div class="ey">⚡ מופעל על Claude AI + Whisper</div>
+  
   <h1 class="lt">נתח שיחות מכירה<br>עם <em>בינה מלאכותית</em></h1>
   <p class="ls">העלה הקלטה, קבל ניתוח מעמיק תוך שניות.<br>דירוגים, תובנות, והמלצות לשיפור בעברית.</p>
   <div class="gc">
@@ -346,7 +346,7 @@ footer{border-top:1px solid var(--b);padding:20px 0;text-align:center;color:var(
   <div id="repContent"></div>
 </div></div>
 
-<footer><div class="w">BIG Call Analytics · מערכת ניתוח שיחות מאת BYBR · Whisper + Claude AI</div></footer>
+<footer><div class="w">BIG Call Analytics · מערכת ניתוח שיחות מאת BYBR</div></footer>
 
 <script>
 const SU='https://hwjstbjrczooeboocsyo.supabase.co',SK='sb_publishable_Kk2MItj9E8U7azQv6S-tMA_uyPBcys3';
@@ -404,7 +404,7 @@ async function go(){
   document.getElementById('results').style.display='none';
   try{
     setProg(15,'🎙️ מתמלל את השיחה בעברית...');const tr=await transcribe(selF);
-    setProg(52,'🧠 Claude מנתח לעומק...');const an=await analyze(tr);
+    setProg(52,'🧠 BYBR מנתח לעומק...');const an=await analyze(tr);
     setProg(88,'💾 שומר להיסטוריה...');
     const title=document.getElementById('ct').value.trim()||selF.name;
     const eid=document.getElementById('es').value||null;
