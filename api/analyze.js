@@ -1,14 +1,26 @@
-if (req.method === 'OPTIONS') {
-  return res.status(200).end();
-}
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  // טיפול ב־CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  console.log('METHOD:', req.method);
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'Anthropic API key not configured' });
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Anthropic API key not configured' });
+  }
 
   try {
-    const { transcript } = req.body;
-    if (!transcript) return res.status(400).json({ error: 'Missing transcript' });
+    const { transcript } = req.body || {};
+
+    if (!transcript) {
+      return res.status(400).json({ error: 'Missing transcript' });
+    }
 
     const prompt = `אתה מאמן מכירות מנוסה עם 20 שנה ניסיון. תפקידך לנתח שיחת מכירה בעברית ולתת פידבק פרקטי וכירורגי – לא כללי.
 
@@ -94,14 +106,39 @@ ${transcript}
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err?.error?.message || 'Claude API error' });
+      console.error('ANTHROPIC ERROR:', err);
+      return res.status(response.status).json({
+        error: err?.error?.message || 'Claude API error'
+      });
     }
 
     const data = await response.json();
-    const text = data.content.map(b => b.text || '').join('');
+
+    const text = (data.content || [])
+      .map(b => b.text || '')
+      .join('');
+
     const clean = text.replace(/```json|```/g, '').trim();
-    res.status(200).json(JSON.parse(clean));
+
+    let parsed;
+
+    try {
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      console.error('RAW RESPONSE:', text);
+      return res.status(500).json({
+        error: 'Invalid JSON from Claude',
+        raw: text
+      });
+    }
+
+    res.status(200).json(parsed);
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('FULL ERROR:', err);
+    res.status(500).json({
+      error: err.message,
+      stack: err.stack
+    });
   }
 }
