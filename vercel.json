@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/analyze.js": { "maxDuration": 60 },
+    "api/transcribe.js": { "maxDuration": 60 },
+    "api/history.js": { "maxDuration": 10 }
+  },
+  "rewrites": [
+    { "source": "/api/transcribe", "destination": "/api/transcribe.js" },
+    { "source": "/api/analyze", "destination": "/api/analyze.js" },
+    { "source": "/api/history", "destination": "/api/history.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
